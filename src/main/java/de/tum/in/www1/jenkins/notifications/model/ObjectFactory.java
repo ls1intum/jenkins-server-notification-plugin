@@ -13,7 +13,7 @@ import javax.xml.bind.annotation.XmlRegistry;
 public class ObjectFactory {
 
     public ObjectFactory() {
-        // NOP
+        // The empty constructor is needed explicitly so that it can be accessed with reflection for JAXB.
     }
 
     public Commit createCommit() {
