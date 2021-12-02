@@ -120,11 +120,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
     }
 
     private JAXBContext createJAXBContext() throws JAXBException {
-        return ContextFactory.createContext( //
-                ObjectFactory.class.getPackage().getName(), //
-                ObjectFactory.class.getClassLoader(), //
-                null //
-        );
+        return ContextFactory.createContext(ObjectFactory.class.getPackage().getName(), ObjectFactory.class.getClassLoader(), null);
     }
 
     private List<String> extractLogs(@Nonnull Run<?, ?> run, TaskListener taskListener) {
