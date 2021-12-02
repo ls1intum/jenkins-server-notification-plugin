@@ -16,7 +16,36 @@ public class ObjectFactory {
         // NOP
     }
 
+    public Commit createCommit() {
+        return new Commit();
+    }
+
+    public CustomFeedback createCustomFeedback() {
+        return new CustomFeedback();
+    }
+
+    public Error createError() {
+        return new Error();
+    }
+
+    public Failure createFailure() {
+        return new Failure();
+    }
+
+    public SuccessInfo createSuccessInfo() {
+        return new SuccessInfo();
+    }
+
+    public TestCase createTestCase() {
+        return new TestCase();
+    }
+
+    public TestResults createTestResults() {
+        return new TestResults();
+    }
+
     public Testsuite createTestsuite() {
         return new Testsuite();
     }
+
 }
