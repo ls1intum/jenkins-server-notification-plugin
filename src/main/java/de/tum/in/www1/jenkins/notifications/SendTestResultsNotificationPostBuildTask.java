@@ -2,16 +2,17 @@ package de.tum.in.www1.jenkins.notifications;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-
-import jenkins.model.Jenkins;
-import jenkins.tasks.SimpleBuildStep;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpException;
@@ -24,13 +25,14 @@ import org.kohsuke.stapler.QueryParameter;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import com.sun.xml.bind.v2.ContextFactory;
 
 import de.tum.in.ase.parser.domain.Report;
 import de.tum.in.www1.jenkins.notifications.exception.TestParsingException;
 import de.tum.in.www1.jenkins.notifications.model.Commit;
+import de.tum.in.www1.jenkins.notifications.model.ObjectFactory;
 import de.tum.in.www1.jenkins.notifications.model.TestResults;
 import de.tum.in.www1.jenkins.notifications.model.Testsuite;
-
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -46,6 +48,8 @@ import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import jenkins.model.Jenkins;
+import jenkins.tasks.SimpleBuildStep;
 
 public class SendTestResultsNotificationPostBuildTask extends Recorder implements SimpleBuildStep {
 
@@ -87,34 +91,42 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             results.setLogs(extractLogs(run, taskListener));
         }
 
-        final StringCredentials credentials = CredentialsProvider
-                .findCredentialById(credentialsId, StringCredentials.class, run, Collections.emptyList());
+        final StringCredentials credentials = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run, Collections.emptyList());
         final String secret = credentials != null ? credentials.getSecret().getPlainText() : "Credentials containing the Notification Plugin Secret not found";
 
         // Post results to notification URL
         try {
             HttpHelper.postTestResults(results, notificationUrl, secret);
-        }
-        catch (HttpException e) {
+        } catch (HttpException e) {
             taskListener.error(e.getMessage(), e);
         }
     }
 
     private List<Testsuite> extractTestResults(@Nonnull TaskListener taskListener, FilePath resultsDir) throws IOException, InterruptedException {
-        return resultsDir.list().stream()
-                .filter(path -> path.getName().endsWith(".xml"))
-                .map(report -> {
-                    try {
-                        final JAXBContext context = JAXBContext.newInstance(Testsuite.class);
-                        final Unmarshaller unmarshaller = context.createUnmarshaller();
-                        return (Testsuite) unmarshaller.unmarshal(report.read());
-                    }
-                    catch (JAXBException | IOException | InterruptedException e) {
-                        taskListener.error(e.getMessage(), e);
-                        throw new TestParsingException(e);
-                    }
-                })
-                .collect(Collectors.toList());
+        return resultsDir.list().stream().filter(path -> path.getName().endsWith(".xml")).map(report -> {
+            try {
+                final JAXBContext context = createJAXBContext(taskListener);
+                final Unmarshaller unmarshaller = context.createUnmarshaller();
+                return (Testsuite) unmarshaller.unmarshal(report.read());
+            } catch (JAXBException | IOException | InterruptedException e) {
+                taskListener.error(e.getMessage(), e);
+                throw new TestParsingException(e);
+            }
+        }).collect(Collectors.toList());
+    }
+
+    private JAXBContext createJAXBContext(@Nonnull TaskListener taskListener) {
+        JAXBContext context = null;
+        try {
+            context = ContextFactory.createContext( //
+                    ObjectFactory.class.getPackage().getName(), //
+                    ObjectFactory.class.getClassLoader(), //
+                    null //
+            );
+        } catch (JAXBException e) {
+            taskListener.error(e.getMessage(), e);
+        }
+        return context;
     }
 
     private List<String> extractLogs(@Nonnull Run<?, ?> run, TaskListener taskListener) {
@@ -125,8 +137,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
 
             final String logString = stringWriter.toString();
             Collections.addAll(logs, logString.split("\n"));
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             taskListener.error(ex.getMessage(), ex);
         }
 
@@ -159,18 +170,16 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
     }
 
     private List<Commit> findCommits(Run<?, ?> run) {
-        return run.getActions(BuildData.class).stream()
-                .map(buildData -> {
-                    final String[] urlString = buildData.getRemoteUrls().iterator().next().split("/");
-                    final String slug = urlString[urlString.length - 1].split("\\.")[0];
-                    final String hash = Objects.requireNonNull(buildData.getLastBuiltRevision()).getSha1().name();
-                    final Commit commit = new Commit();
-                    commit.setRepositorySlug(slug);
-                    commit.setHash(hash);
+        return run.getActions(BuildData.class).stream().map(buildData -> {
+            final String[] urlString = buildData.getRemoteUrls().iterator().next().split("/");
+            final String slug = urlString[urlString.length - 1].split("\\.")[0];
+            final String hash = Objects.requireNonNull(buildData.getLastBuiltRevision()).getSha1().name();
+            final Commit commit = new Commit();
+            commit.setRepositorySlug(slug);
+            commit.setHash(hash);
 
-                    return commit;
-                })
-                .collect(Collectors.toList());
+            return commit;
+        }).collect(Collectors.toList());
     }
 
     public String getCredentialsId() {
@@ -210,15 +219,12 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                 if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                     return result.includeCurrentValue(credentialsId);
                 }
-            }
-            else {
-                if (!item.hasPermission(Item.EXTENDED_READ)
-                        && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+            } else {
+                if (!item.hasPermission(Item.EXTENDED_READ) && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
                     return result.includeCurrentValue(credentialsId);
                 }
             }
-            return result
-                    .includeMatchingAs(ACL.SYSTEM, item, StringCredentials.class, Collections.emptyList(), CredentialsMatchers.always())
+            return result.includeMatchingAs(ACL.SYSTEM, item, StringCredentials.class, Collections.emptyList(), CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
         }
 
@@ -227,10 +233,8 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                 if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                     return FormValidation.ok();
                 }
-            }
-            else {
-                if (!item.hasPermission(Item.EXTENDED_READ)
-                        && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+            } else {
+                if (!item.hasPermission(Item.EXTENDED_READ) && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
                     return FormValidation.ok();
                 }
             }
