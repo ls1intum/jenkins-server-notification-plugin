@@ -2,6 +2,9 @@ package de.tum.in.www1.jenkins.notifications.model;
 
 import javax.xml.bind.annotation.XmlRegistry;
 
+import de.tum.in.ase.parser.domain.Issue;
+import de.tum.in.ase.parser.domain.Report;
+
 /**
  * Based on <a href="https://github.com/jenkinsci/performance-signature-dynatrace-plugin/pull/81/files">an issue of
  * another Jenkins Plugin</a> I've created this object factory to ensure that JAXB works in JDK11.
@@ -48,4 +51,11 @@ public class ObjectFactory {
         return new Testsuite();
     }
 
+    public Report createReport() {
+        return new Report(null);
+    }
+
+    public Issue createIssue() {
+        return new Issue();
+    }
 }
