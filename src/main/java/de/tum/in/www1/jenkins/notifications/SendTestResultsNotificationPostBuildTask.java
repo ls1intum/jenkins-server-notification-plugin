@@ -194,7 +194,8 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
 
             String fileContent = optionalReport.get().readToString();
             return new JSONObject(fileContent).getJSONArray("tests");
-        } catch (Throwable t) {
+        }
+        catch (Throwable t) {
             // catch type Throwable to be safe
             return new JSONArray();
         }
