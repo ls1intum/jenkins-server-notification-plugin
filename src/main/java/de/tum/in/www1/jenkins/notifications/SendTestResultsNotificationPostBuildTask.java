@@ -21,6 +21,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpException;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -61,6 +63,8 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
 
     private static final String STATIC_CODE_ANALYSIS_REPORTS_PATH = "staticCodeAnalysisReports";
 
+    private static final String TESTWISE_COVERAGE_ANALYSIS_REPORT_PATH = "testwiseCoverageReport";
+
     private String credentialsId;
 
     private String notificationUrl;
@@ -77,13 +81,16 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         final FilePath testResultsDir = filePath.child(TEST_RESULTS_PATH);
         final FilePath customFeedbacksDir = filePath.child(CUSTOM_FEEDBACKS_PATH);
         final FilePath staticCodeAnalysisResultsDir = filePath.child(STATIC_CODE_ANALYSIS_REPORTS_PATH);
+        final FilePath testwiseCoverageAnalysisReportDir = filePath.child(TESTWISE_COVERAGE_ANALYSIS_REPORT_PATH);
 
         final List<Testsuite> testReports = extractTestResults(taskListener, testResultsDir);
         final Optional<Testsuite> customFeedbacks = CustomFeedbackParser.extractCustomFeedbacks(taskListener, customFeedbacksDir);
         customFeedbacks.ifPresent(testReports::add);
         final List<Report> staticCodeAnalysisReport = StaticCodeAnalysisParser.parseReports(taskListener, staticCodeAnalysisResultsDir);
 
-        final TestResults results = combineTestResults(run, testReports, staticCodeAnalysisReport);
+        final JSONArray testwiseCoverageReport = parseTestwiseCoverageReport(testwiseCoverageAnalysisReportDir);
+
+        final TestResults results = combineTestResults(run, testReports, staticCodeAnalysisReport, testwiseCoverageReport);
 
         // Set build status
         results.setIsBuildSuccessful(run.getResult() == Result.SUCCESS);
@@ -139,7 +146,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         return logs;
     }
 
-    private TestResults combineTestResults(@Nonnull Run<?, ?> run, List<Testsuite> testReports, List<Report> staticCodeAnalysisReports) {
+    private TestResults combineTestResults(@Nonnull Run<?, ?> run, List<Testsuite> testReports, List<Report> staticCodeAnalysisReports, JSONArray testwiseCoverageReport) {
         int skipped = 0;
         int failed = 0;
         int successful = 0;
@@ -154,6 +161,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         final TestResults results = new TestResults();
         results.setResults(testReports);
         results.setStaticCodeAnalysisReports(staticCodeAnalysisReports);
+        results.setTestwiseCoverageReport(testwiseCoverageReport);
         results.setCommits(findCommits(run));
         results.setFullName(run.getFullDisplayName());
         results.setErrors(errors);
@@ -175,6 +183,21 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
 
             return commit;
         }).collect(Collectors.toList());
+    }
+
+    private JSONArray parseTestwiseCoverageReport(FilePath reportDir) {
+        try {
+            Optional<FilePath> optionalReport = reportDir.list().stream().findFirst();
+            if (!optionalReport.isPresent() || !optionalReport.get().getName().endsWith(".json")) {
+                return new JSONArray();
+            }
+
+            String fileContent = optionalReport.get().readToString();
+            return new JSONObject(fileContent).getJSONArray("tests");
+        } catch (Throwable t) {
+            // catch type Throwable to be safe
+            return new JSONArray();
+        }
     }
 
     public String getCredentialsId() {
