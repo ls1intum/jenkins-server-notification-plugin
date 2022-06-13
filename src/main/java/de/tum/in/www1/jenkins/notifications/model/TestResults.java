@@ -6,9 +6,10 @@ import java.util.List;
 
 import javax.annotation.CheckForNull;
 
-import com.google.gson.JsonArray;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+
+import com.google.gson.JsonArray;
 
 import de.tum.in.ase.parser.domain.Report;
 
