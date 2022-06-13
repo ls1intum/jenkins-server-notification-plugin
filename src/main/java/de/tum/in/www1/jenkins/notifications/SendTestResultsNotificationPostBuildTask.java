@@ -14,6 +14,9 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 
@@ -21,8 +24,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpException;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -88,7 +89,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         customFeedbacks.ifPresent(testReports::add);
         final List<Report> staticCodeAnalysisReport = StaticCodeAnalysisParser.parseReports(taskListener, staticCodeAnalysisResultsDir);
 
-        final JSONArray testwiseCoverageReport = parseTestwiseCoverageReport(testwiseCoverageAnalysisReportDir);
+        final JsonArray testwiseCoverageReport = parseTestwiseCoverageReport(testwiseCoverageAnalysisReportDir);
 
         final TestResults results = combineTestResults(run, testReports, staticCodeAnalysisReport, testwiseCoverageReport);
 
@@ -146,7 +147,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         return logs;
     }
 
-    private TestResults combineTestResults(@Nonnull Run<?, ?> run, List<Testsuite> testReports, List<Report> staticCodeAnalysisReports, JSONArray testwiseCoverageReport) {
+    private TestResults combineTestResults(@Nonnull Run<?, ?> run, List<Testsuite> testReports, List<Report> staticCodeAnalysisReports, JsonArray testwiseCoverageReport) {
         int skipped = 0;
         int failed = 0;
         int successful = 0;
@@ -185,19 +186,20 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         }).collect(Collectors.toList());
     }
 
-    private JSONArray parseTestwiseCoverageReport(FilePath reportDir) {
+    private JsonArray parseTestwiseCoverageReport(FilePath reportDir) {
         try {
-            Optional<FilePath> optionalReport = reportDir.list().stream().findFirst();
-            if (!optionalReport.isPresent() || !optionalReport.get().getName().endsWith(".json")) {
-                return new JSONArray();
+            Optional<FilePath> optionalReport = reportDir.list().stream().filter(filePath -> filePath.getName().endsWith(".json")).findFirst();
+            if (!optionalReport.isPresent()) {
+                return new JsonArray();
             }
 
             String fileContent = optionalReport.get().readToString();
-            return new JSONObject(fileContent).getJSONArray("tests");
+            JsonElement element = new JsonParser().parse(fileContent);
+            return element.getAsJsonObject().get("tests").getAsJsonArray();
         }
         catch (Throwable t) {
             // catch type Throwable to be safe
-            return new JSONArray();
+            return new JsonArray();
         }
     }
 

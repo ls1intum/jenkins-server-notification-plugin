@@ -6,7 +6,7 @@ import java.util.List;
 
 import javax.annotation.CheckForNull;
 
-import org.json.JSONArray;
+import com.google.gson.JsonArray;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -34,7 +34,7 @@ public class TestResults implements Action {
 
     private List<Report> staticCodeAnalysisReports;
 
-    private JSONArray testwiseCoverageReport;
+    private JsonArray testwiseCoverageReport;
 
     private String runDate = ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
 
@@ -124,11 +124,11 @@ public class TestResults implements Action {
     }
 
     @Exported
-    public JSONArray getTestwiseCoverageReport() {
+    public JsonArray getTestwiseCoverageReport() {
         return testwiseCoverageReport;
     }
 
-    public void setTestwiseCoverageReport(JSONArray testwiseCoverageReport) {
+    public void setTestwiseCoverageReport(JsonArray testwiseCoverageReport) {
         this.testwiseCoverageReport = testwiseCoverageReport;
     }
 
