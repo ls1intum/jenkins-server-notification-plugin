@@ -26,8 +26,11 @@ class TestsuiteTest {
 
         Testsuite flattened = input.flatten();
         assertNull(flattened.getTestSuites());
+
         assertEquals(12, flattened.getTests());
         assertEquals(12, flattened.getTestCases().size());
+        assertEquals(0, flattened.getErrors());
+        assertEquals(0, flattened.getFailures());
     }
 
     @Test
@@ -53,10 +56,11 @@ class TestsuiteTest {
 
         Testsuite flattened = input.flatten();
         assertNull(flattened.getTestSuites());
+
         assertEquals(12, flattened.getTests());
         assertEquals(12, flattened.getTestCases().size());
-        long testsWithFailures = flattened.getTestCases().stream().filter(testCase -> testCase.getFailures() != null).count();
-        assertEquals(2, testsWithFailures);
+        assertEquals(2, flattened.getFailures());
+        assertEquals(1, flattened.getErrors());
     }
 
     private Testsuite loadTestSuite(final Path reportXml) throws JAXBException {
