@@ -89,9 +89,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         results.setIsBuildSuccessful(run.getResult() == Result.SUCCESS);
 
         // Add build logs only if the build failed
-        if (!results.isBuildSuccessful()) {
-            results.setLogs(extractLogs(run, taskListener));
-        }
+        results.setLogs(extractLogs(run, taskListener));
 
         final StringCredentials credentials = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run, Collections.emptyList());
         final String secret = credentials != null ? credentials.getSecret().getPlainText() : "Credentials containing the Notification Plugin Secret not found";
