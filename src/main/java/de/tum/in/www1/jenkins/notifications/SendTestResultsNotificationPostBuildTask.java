@@ -2,11 +2,7 @@ package de.tum.in.www1.jenkins.notifications;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
@@ -14,6 +10,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import hudson.plugins.git.GitObject;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 
@@ -170,9 +167,16 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             final String[] urlString = buildData.getRemoteUrls().iterator().next().split("/");
             final String slug = urlString[urlString.length - 1].split("\\.")[0];
             final String hash = Objects.requireNonNull(buildData.getLastBuiltRevision()).getSha1().name();
+            final String branchName = buildData.getLastBuiltRevision().getBranches().stream().map(GitObject::getName).findFirst().orElse(null);
             final Commit commit = new Commit();
             commit.setRepositorySlug(slug);
             commit.setHash(hash);
+            if (branchName != null) {
+                // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use branchNameParts[1])
+                String[] branchNameParts = branchName.split("/");
+                String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
+                commit.setBranchName(String.join("/", branchNamePartsWithoutRepositoryName));
+            }
 
             return commit;
         }).collect(Collectors.toList());
