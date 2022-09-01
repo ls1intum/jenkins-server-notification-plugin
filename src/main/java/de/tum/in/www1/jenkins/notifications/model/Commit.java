@@ -5,8 +5,11 @@ import org.kohsuke.stapler.export.ExportedBean;
 
 @ExportedBean(defaultVisibility = 2)
 public class Commit {
+
     private String hash;
+
     private String repositorySlug;
+
     private String branchName;
 
     @Exported

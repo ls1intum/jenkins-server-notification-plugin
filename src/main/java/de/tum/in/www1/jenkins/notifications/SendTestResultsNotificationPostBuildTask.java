@@ -10,7 +10,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import hudson.plugins.git.GitObject;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 
@@ -42,6 +41,7 @@ import hudson.model.Item;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.plugins.git.GitObject;
 import hudson.plugins.git.util.BuildData;
 import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
@@ -172,7 +172,8 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             commit.setRepositorySlug(slug);
             commit.setHash(hash);
             if (branchName != null) {
-                // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use branchNameParts[1])
+                // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use
+                // branchNameParts[1])
                 String[] branchNameParts = branchName.split("/");
                 String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
                 commit.setBranchName(String.join("/", branchNamePartsWithoutRepositoryName));
