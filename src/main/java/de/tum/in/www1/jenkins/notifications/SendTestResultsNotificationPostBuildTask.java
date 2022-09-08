@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -167,20 +168,25 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             final String[] urlString = buildData.getRemoteUrls().iterator().next().split("/");
             final String slug = urlString[urlString.length - 1].split("\\.")[0];
             final String hash = Objects.requireNonNull(buildData.getLastBuiltRevision()).getSha1().name();
-            final String branchName = buildData.getLastBuiltRevision().getBranches().stream().map(GitObject::getName).findFirst().orElse(null);
             final Commit commit = new Commit();
             commit.setRepositorySlug(slug);
             commit.setHash(hash);
-            if (branchName != null) {
-                // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use
-                // branchNameParts[1])
-                String[] branchNameParts = branchName.split("/");
-                String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
-                commit.setBranchName(String.join("/", branchNamePartsWithoutRepositoryName));
-            }
-
+            commit.setBranchName(getBranchName(buildData));
             return commit;
         }).collect(Collectors.toList());
+    }
+
+    private @Nullable String getBranchName(BuildData buildData) {
+        String branchName = buildData.getLastBuiltRevision().getBranches().stream().map(GitObject::getName).findFirst().orElse(null);
+        if (branchName != null) {
+            // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use
+            // branchNameParts[1])
+            String[] branchNameParts = branchName.split("/");
+            String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
+            return String.join("/", branchNamePartsWithoutRepositoryName);
+        }
+
+        return null;
     }
 
     public String getCredentialsId() {
