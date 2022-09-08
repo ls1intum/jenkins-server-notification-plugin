@@ -177,16 +177,20 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
     }
 
     private @Nullable String getBranchName(BuildData buildData) {
-        String branchName = buildData.getLastBuiltRevision().getBranches().stream().map(GitObject::getName).findFirst().orElse(null);
-        if (branchName != null) {
-            // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use
-            // branchNameParts[1])
-            String[] branchNameParts = branchName.split("/");
-            String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
-            return String.join("/", branchNamePartsWithoutRepositoryName);
+        if (buildData.getLastBuiltRevision() == null) {
+            return null;
         }
 
-        return null;
+        String branchName = buildData.getLastBuiltRevision().getBranches().stream().map(GitObject::getName).findFirst().orElse(null);
+        if (branchName == null) {
+            return null;
+        }
+
+        // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use
+        // branchNameParts[1])
+        String[] branchNameParts = branchName.split("/");
+        String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
+        return String.join("/", branchNamePartsWithoutRepositoryName);
     }
 
     public String getCredentialsId() {
