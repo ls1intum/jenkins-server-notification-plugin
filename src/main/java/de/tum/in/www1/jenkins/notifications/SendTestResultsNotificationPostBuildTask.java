@@ -2,14 +2,11 @@ package de.tum.in.www1.jenkins.notifications;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
@@ -48,6 +45,7 @@ import hudson.model.Item;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.plugins.git.GitObject;
 import hudson.plugins.git.util.BuildData;
 import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
@@ -96,10 +94,8 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         // Set build status
         results.setIsBuildSuccessful(run.getResult() == Result.SUCCESS);
 
-        // Add build logs only if the build failed
-        if (!results.isBuildSuccessful()) {
-            results.setLogs(extractLogs(run, taskListener));
-        }
+        // Add build logs
+        results.setLogs(extractLogs(run, taskListener));
 
         final StringCredentials credentials = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run, Collections.emptyList());
         final String secret = credentials != null ? credentials.getSecret().getPlainText() : "Credentials containing the Notification Plugin Secret not found";
@@ -182,7 +178,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             final Commit commit = new Commit();
             commit.setRepositorySlug(slug);
             commit.setHash(hash);
-
+            commit.setBranchName(getBranchName(buildData));
             return commit;
         }).collect(Collectors.toList());
     }
@@ -202,6 +198,23 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             // catch type Throwable to be safe
             return new JsonArray();
         }
+    }
+
+    private @Nullable String getBranchName(BuildData buildData) {
+        if (buildData.getLastBuiltRevision() == null) {
+            return null;
+        }
+
+        String branchName = buildData.getLastBuiltRevision().getBranches().stream().map(GitObject::getName).findFirst().orElse(null);
+        if (branchName == null) {
+            return null;
+        }
+
+        // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use
+        // branchNameParts[1])
+        String[] branchNameParts = branchName.split("/");
+        String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
+        return String.join("/", branchNamePartsWithoutRepositoryName);
     }
 
     public String getCredentialsId() {
