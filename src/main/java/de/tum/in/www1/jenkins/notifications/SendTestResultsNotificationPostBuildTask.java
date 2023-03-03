@@ -92,12 +92,15 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         final StringCredentials credentials = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run, Collections.emptyList());
         final String secret = credentials != null ? credentials.getSecret().getPlainText() : "Credentials containing the Notification Plugin Secret not found";
 
-        // Post results to notification URL
+        postBuildResults(taskListener, results, secret);
+    }
+
+    private void postBuildResults(@Nonnull TaskListener taskListener, TestResults results, String secret) throws IOException {
         try {
             HttpHelper.postTestResults(results, notificationUrl, secret);
         }
         catch (HttpException e) {
-            taskListener.error(e.getMessage(), e);
+            taskListener.error(e.getMessage());
         }
     }
 
@@ -110,7 +113,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                 return testsuite.flatten();
             }
             catch (JAXBException | IOException | InterruptedException e) {
-                taskListener.error(e.getMessage(), e);
+                taskListener.error(e.getMessage());
                 throw new TestParsingException(e);
             }
         }).collect(Collectors.toList());
@@ -130,7 +133,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             Collections.addAll(logs, logString.split("\n"));
         }
         catch (IOException ex) {
-            taskListener.error(ex.getMessage(), ex);
+            taskListener.error(ex.getMessage());
         }
 
         return logs;

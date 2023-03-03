@@ -1,6 +1,7 @@
 package de.tum.in.www1.jenkins.notifications;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
@@ -23,9 +24,16 @@ public class HttpHelper {
                 .execute()
                 .returnResponse();
 
+        checkError(response);
+    }
+
+    private static void checkError(final HttpResponse response) throws IOException, HttpException {
         if (response.getStatusLine().getStatusCode() != 200) {
-            throw new HttpException(String.format(Messages.SendTestResultsNotificationPostBuildTask_errors_postFailed(),
-                    response.getStatusLine().getStatusCode(), IOUtils.toString(response.getEntity().getContent())));
+            final int statusCode = response.getStatusLine().getStatusCode();
+            final String errorMessage = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+            final String messageTemplate = Messages.SendTestResultsNotificationPostBuildTask_errors_postFailed();
+
+            throw new HttpException(String.format(messageTemplate, statusCode, errorMessage));
         }
     }
 }
