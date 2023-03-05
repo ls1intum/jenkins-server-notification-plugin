@@ -4,12 +4,12 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.16</version>
+        <version>4.55</version>
         <relativePath />
     </parent>
     <groupId>io.jenkins.plugins</groupId>
     <artifactId>test-notifications</artifactId>
-    <version>1.7.1</version>
+    <version>1.8.0</version>
     <packaging>hpi</packaging>
     <organization>
         <name>LS1 TUM</name>
@@ -17,9 +17,9 @@
     </organization>
     <properties>
         <!-- Baseline Jenkins version you use to build the plugin. Users must have this version or newer to run. -->
-        <jenkins.version>2.303.1</jenkins.version>
-        <java.level>8</java.level>
-        <spotless.version>2.12.1</spotless.version>
+        <jenkins.version>2.361.4</jenkins.version>
+        <java.level>11</java.level>
+        <spotless.version>2.33.0</spotless.version>
         <!-- Other properties you may want to use:
           ~ jenkins-test-harness.version: Jenkins Test Harness version you use to test the plugin. For Jenkins version >= 1.580.1 use JTH 2.0 or higher.
           ~ hpi-plugin.version: The HPI Maven Plugin version used by the plugin..
@@ -37,47 +37,48 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <!-- Pick up common dependencies for 2.164.x: https://github.com/jenkinsci/bom#usage -->
                 <groupId>io.jenkins.tools.bom</groupId>
-                <artifactId>bom-2.277.x</artifactId>
-                <version>26</version>
+                <artifactId>bom-2.361.x</artifactId>
+                <version>1841.v7b_22c5218e1a</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
-                <version>5.8.2</version>
+                <version>5.9.2</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <!-- jenkins plugin dependencies -->
+        <!-- the compatible versions are automatically determined by the jenkins bom -->
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>jaxb</artifactId>
-            <version>2.3.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>git</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.9.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>plain-credentials</artifactId>
-            <version>1.7</version>
+        </dependency>
+        <!-- other dependencies -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
         </dependency>
         <dependency>
             <groupId>de.tum.in.ase</groupId>
             <artifactId>static-code-analysis-parser</artifactId>
             <version>1.4.0</version>
         </dependency>
+        <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-launcher</artifactId>
@@ -109,6 +110,11 @@
     -->
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.15.0</version>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
