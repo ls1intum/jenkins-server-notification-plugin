@@ -246,6 +246,29 @@ Email: krusche[at]in[dot]tum[dot]de
       ]
     }
   ],
+  "testwiseCoverageReport": [
+    {
+      "duration": 0.026,
+      "result": "PASSED",
+      "paths": [
+        {
+          "path": "de/tum/in/ase",
+          "files": [
+            {
+              "fileName": "BubbleSort.java",
+              "coveredLines": "5,14-19,24"
+            },
+            {
+              "fileName": "SortingExampleBehaviorTest.java",
+              "coveredLines": "34-38,40-42,47-49,52"
+            }
+          ]
+        }
+      ],
+      "uniformPath": "de/tum/in/ase/SortingExampleBehaviorTest/testBubbleSort()",
+      "sourcePath": "de/tum/in/ase/SortingExampleBehaviorTest"
+    }
+  ],
   "runDate": "2020-02-19T14:42:42.084Z[Etc/UTC]",
   "skipped": 0,
   "successful": 0

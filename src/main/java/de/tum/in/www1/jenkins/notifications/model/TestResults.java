@@ -9,6 +9,8 @@ import javax.annotation.CheckForNull;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
+import com.google.gson.JsonArray;
+
 import de.tum.in.ase.parser.domain.Report;
 
 import hudson.model.Action;
@@ -32,6 +34,8 @@ public class TestResults implements Action {
     private List<Testsuite> results;
 
     private List<Report> staticCodeAnalysisReports;
+
+    private JsonArray testwiseCoverageReport;
 
     private String runDate = ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
 
@@ -118,6 +122,15 @@ public class TestResults implements Action {
 
     public void setStaticCodeAnalysisReports(List<Report> staticCodeAnalysisReports) {
         this.staticCodeAnalysisReports = staticCodeAnalysisReports;
+    }
+
+    @Exported
+    public JsonArray getTestwiseCoverageReport() {
+        return testwiseCoverageReport;
+    }
+
+    public void setTestwiseCoverageReport(JsonArray testwiseCoverageReport) {
+        this.testwiseCoverageReport = testwiseCoverageReport;
     }
 
     @Exported
