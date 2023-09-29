@@ -11,6 +11,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import hudson.EnvVars;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 
@@ -75,7 +76,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener)
+    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull EnvVars envVars, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener)
             throws InterruptedException, IOException {
         final FilePath testResultsDir = filePath.child(TEST_RESULTS_PATH);
         final FilePath customFeedbacksDir = filePath.child(CUSTOM_FEEDBACKS_PATH);
@@ -189,12 +190,12 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
     private JsonArray parseTestwiseCoverageReport(FilePath reportDir) {
         try {
             Optional<FilePath> optionalReport = reportDir.list().stream().filter(filePath -> filePath.getName().endsWith(".json")).findFirst();
-            if (!optionalReport.isPresent()) {
+            if (optionalReport.isEmpty()) {
                 return new JsonArray();
             }
 
             String fileContent = optionalReport.get().readToString();
-            JsonElement element = new JsonParser().parse(fileContent);
+            JsonElement element = JsonParser.parseString(fileContent);
             return element.getAsJsonObject().get("tests").getAsJsonArray();
         }
         catch (Throwable t) {
