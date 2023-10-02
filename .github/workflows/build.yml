@@ -1,11 +1,12 @@
-name: Continous Integration
+name: Continuous Integration
 
 on:
   pull_request:
   push:
     branches:
       - main
-    tags: 'v[0-9]+.[0-9]+.[0-9]+'
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
     paths-ignore:
       - './idea'
       - 'README.md'
@@ -27,7 +28,7 @@ jobs:
         with:
           java-version: '${{ env.java }}'
           distribution: '${{ env.java-distribution }}'
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Cache Maven packages
@@ -43,7 +44,7 @@ jobs:
       - name: Copy artifact
         run: mkdir staging && cp target/*.hpi staging
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: plugin
           path: staging
@@ -95,7 +96,7 @@ jobs:
         with:
           java-version: '${{ env.java }}'
           distribution: '${{ env.java-distribution }}'
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
