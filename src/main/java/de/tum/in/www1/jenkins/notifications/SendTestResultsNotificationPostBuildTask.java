@@ -6,13 +6,12 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.sun.xml.bind.v2.ContextFactory;
 import de.tum.in.ase.parser.domain.Report;
 import de.tum.in.www1.jenkins.notifications.exception.TestParsingException;
 import de.tum.in.www1.jenkins.notifications.model.Commit;
-import de.tum.in.www1.jenkins.notifications.model.ObjectFactory;
 import de.tum.in.www1.jenkins.notifications.model.TestResults;
 import de.tum.in.www1.jenkins.notifications.model.Testsuite;
+import de.tum.in.www1.jenkins.notifications.model.Testsuites;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
@@ -36,9 +35,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 import org.apache.commons.lang.StringUtils;
@@ -63,10 +60,13 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
 
     private String notificationUrl;
 
+    private final JunitXmlParser junitXmlParser;
+
     @DataBoundConstructor
-    public SendTestResultsNotificationPostBuildTask(String credentialsId, String notificationUrl) {
+    public SendTestResultsNotificationPostBuildTask(String credentialsId, String notificationUrl) throws JAXBException {
         this.credentialsId = credentialsId;
         this.notificationUrl = notificationUrl;
+        this.junitXmlParser = new JunitXmlParser();
     }
 
     @Override
@@ -124,21 +124,17 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                 .filter(path -> path.getName().endsWith(".xml"))
                 .map(report -> {
                     try {
-                        final JAXBContext context = createJAXBContext();
-                        final Unmarshaller unmarshaller = context.createUnmarshaller();
-                        Testsuite testsuite = (Testsuite) unmarshaller.unmarshal(report.read());
-                        return testsuite.flatten();
-                    } catch (JAXBException | IOException | InterruptedException e) {
+                        return junitXmlParser.parseJunitTestReport(report.read());
+                    } catch (IOException | InterruptedException e) {
                         taskListener.error(e.getMessage());
                         throw new TestParsingException(e);
+                    } catch (TestParsingException e) {
+                        taskListener.error(e.getMessage());
+                        throw e;
                     }
                 })
+                .flatMap(Testsuites::flattened)
                 .collect(Collectors.toList());
-    }
-
-    private JAXBContext createJAXBContext() throws JAXBException {
-        return ContextFactory.createContext(
-                ObjectFactory.class.getPackage().getName(), ObjectFactory.class.getClassLoader(), null);
     }
 
     private List<String> extractLogs(@Nonnull Run<?, ?> run, TaskListener taskListener) {

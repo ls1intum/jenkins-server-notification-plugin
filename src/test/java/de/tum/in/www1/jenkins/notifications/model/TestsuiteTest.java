@@ -1,11 +1,10 @@
 package de.tum.in.www1.jenkins.notifications.model;
 
-import com.sun.xml.bind.v2.ContextFactory;
+import de.tum.in.www1.jenkins.notifications.JunitXmlParser;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
@@ -19,9 +18,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TestsuiteTest {
 
+    private JunitXmlParser junitXmlParser;
+
+    @BeforeEach
+    void setup() throws JAXBException {
+        junitXmlParser = new JunitXmlParser();
+    }
+
     @Test
     void testFlattenNestedSuiteSuccessful() throws Exception {
-        Testsuite input = loadTestSuite(Paths.get("nested_successful.xml"));
+        Testsuite input = loadSingleTestSuite(Paths.get("nested_successful.xml"));
         assertEquals(2, input.getTestSuites().size());
 
         Testsuite flattened = input.flatten();
@@ -35,7 +41,7 @@ class TestsuiteTest {
 
     @Test
     void testFlattenBuildTestCaseNames() throws Exception {
-        Testsuite testSuite = loadTestSuite(Paths.get("nested_successful.xml")).flatten();
+        Testsuite testSuite = loadSingleTestSuite(Paths.get("nested_successful.xml")).flatten();
 
         List<String> expectedTestCaseNames = new ArrayList<>();
         expectedTestCaseNames.add("Properties.Checked by SmallCheck.Testing filtering in A");
@@ -51,7 +57,7 @@ class TestsuiteTest {
 
     @Test
     void testFlattenNestedSuiteWithFailures() throws Exception {
-        Testsuite input = loadTestSuite(Paths.get("nested_with_failures.xml"));
+        Testsuite input = loadSingleTestSuite(Paths.get("nested_with_failures.xml"));
         assertEquals(2, input.getTestSuites().size());
 
         Testsuite flattened = input.flatten();
@@ -63,16 +69,91 @@ class TestsuiteTest {
         assertEquals(1, flattened.getErrors());
     }
 
-    private Testsuite loadTestSuite(final Path reportXml) throws JAXBException {
-        Path resourcePath = new File("testsuite_examples").toPath().resolve(reportXml);
-        URL resource = getClass().getClassLoader().getResource(resourcePath.toString());
+    @Test
+    void testParseTestSuites() throws Exception {
+        Testsuites suites = loadTestSuite(Paths.get("nested_with_failures_top_level_testsuites.xml"));
+        assertEquals(2, suites.getTestSuites().size());
 
-        final JAXBContext context = createJAXBContext();
-        final Unmarshaller unmarshaller = context.createUnmarshaller();
-        return (Testsuite) unmarshaller.unmarshal(resource);
+        assertEquals("Properties", suites.getTestSuites().get(0).getName());
+        assertEquals("Unit Tests", suites.getTestSuites().get(1).getName());
     }
 
-    private JAXBContext createJAXBContext() throws JAXBException {
-        return ContextFactory.createContext(ObjectFactory.class.getPackage().getName(), ObjectFactory.class.getClassLoader(), null);
+    @Test
+    void testNestedTestsuiteEmptyNames() throws Exception {
+        Testsuites suites = loadTestSuite(Paths.get("nested_empty_names.xml"));
+        assertEquals(1, suites.getTestSuites().size());
+
+        Testsuite flattened = suites.getTestSuites().get(0).flatten();
+        assertEquals(3, flattened.getTests());
+        assertIterableEquals(
+                List.of("Test1", "Test2", "Test3"),
+                flattened.getTestCases().stream().map(TestCase::getName).collect(Collectors.toList())
+        );
+    }
+
+    @Test
+    void testMultipleTestSuites() throws Exception {
+        Testsuites suites = loadTestSuite(Paths.get("multiple_testsuites.xml"));
+        assertEquals(2, suites.getTestSuites().size());
+
+        List<String> actualTestNames = getTestNames(suites);
+        List<String> expectedTestNames = List.of(
+                "SuiteA.Test1", "SuiteA.Test2", "SuiteA.Test3",
+                "SuiteB.Test1", "SuiteB.Test2", "SuiteB.Test3"
+        );
+
+        assertSameElementsAnyOrder(expectedTestNames, actualTestNames);
+    }
+
+    @Test
+    void testMultipleTestSuitesNested() throws Exception {
+        Testsuites suites = loadTestSuite(Paths.get("multiple_testsuites_nested.xml"));
+        assertEquals(2, suites.getTestSuites().size());
+
+        List<String> actualTestNames = getTestNames(suites);
+        List<String> expectedTestNames = List.of(
+                "SuiteA.Test nested once",
+                "SuiteA.SuiteC.Test1", "SuiteA.SuiteC.Test2", "SuiteA.SuiteC.Test3",
+                "SuiteB.SuiteD.Test1", "SuiteB.SuiteD.Test2", "SuiteB.SuiteD.Test3"
+        );
+
+        assertSameElementsAnyOrder(expectedTestNames, actualTestNames);
+    }
+
+    @Test
+    void testCaseNamesSameWhenSingleTestsuiteWrapped() throws Exception {
+        Testsuites suitesWrapped = loadTestSuite(Paths.get("nested_successful_wrapped_testsuites.xml"));
+        Testsuites suitesNonWrapped = loadTestSuite(Paths.get("nested_successful.xml"));
+
+        List<String> wrappedNames = getTestNames(suitesWrapped);
+        List<String> nonWrappedNames = getTestNames(suitesNonWrapped);
+
+        assertIterableEquals(wrappedNames, nonWrappedNames);
+    }
+
+    private Testsuites loadTestSuite(final Path reportXml) throws IOException {
+        Path resourcePath = new File("testsuite_examples").toPath().resolve(reportXml);
+        URL resource = getClass().getClassLoader().getResource(resourcePath.toString());
+        assertNotNull(resource);
+
+        return junitXmlParser.parseJunitTestReport(resource.openStream());
+    }
+
+    private Testsuite loadSingleTestSuite(final Path reportXml) throws IOException {
+        final Testsuites testsuites = loadTestSuite(reportXml);
+        assertEquals(1, testsuites.getTestSuites().size());
+        return testsuites.getTestSuites().get(0);
+    }
+
+    private List<String> getTestNames(final Testsuites suites) {
+        return suites.flattened().flatMap(suite -> suite.getTestCases().stream()).map(TestCase::getName).collect(Collectors.toList());
+    }
+
+    private static <T> void assertSameElementsAnyOrder(final List<T> expected, final List<T> actual) {
+        assertAll(
+                () -> assertEquals(expected.size(), actual.size()),
+                () -> assertTrue(expected.containsAll(actual), () -> String.format("Expected: %s\nActual: %s", expected, actual)),
+                () -> assertTrue(actual.containsAll(expected))
+        );
     }
 }

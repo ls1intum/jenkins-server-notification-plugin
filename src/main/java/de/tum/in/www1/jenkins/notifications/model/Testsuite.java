@@ -3,11 +3,9 @@ package de.tum.in.www1.jenkins.notifications.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -93,10 +91,43 @@ public class Testsuite {
     /**
      * Combines the test suite and all child test suites recursively into a single test suite.
      *
+     * <p>The own name of this test suite is ignored. Test cases that are direct members of this
+     * suite keep their original name.
+     *
      * @return This test suite with all children suites merged into it.
      */
-    public Testsuite flatten() {
+    Testsuite flatten() {
+        return flatten(false);
+    }
+
+    /**
+     * Combines the test suite and all child test suites recursively into a single test suite.
+     *
+     * <p>Unlike {@link #flatten()}, the own name of this test suite is added to test case names as
+     * prefix.
+     *
+     * @return This test suite with all children suites merged into it.
+     */
+    Testsuite flattenWithOwnNameAsTestNamePrefix() {
+        return flatten(true);
+    }
+
+    private Testsuite flatten(final boolean useOwnNameAsPrefix) {
         initTestCaseCounts();
+
+        if (testCases != null && useOwnNameAsPrefix) {
+            for (final TestCase testCase : testCases) {
+                final String newName = buildTestCaseName(this, testCase);
+                testCase.setName(newName);
+            }
+        }
+
+        if (testSuites != null && useOwnNameAsPrefix) {
+            for (final Testsuite testSuite : testSuites) {
+                final String newName = buildTestSuiteName(this, testSuite);
+                testSuite.setName(newName);
+            }
+        }
 
         if (testSuites != null) {
             testSuites.stream().map(Testsuite::flatten).forEach(this::addOther);
@@ -135,10 +166,12 @@ public class Testsuite {
         }
 
         if (other.testCases != null) {
-            List<TestCase> otherTestCases = other.testCases.stream().map(testCase -> {
-                testCase.setName(buildTestCaseName(other, testCase));
-                return testCase;
-            }).collect(Collectors.toList());
+            List<TestCase> otherTestCases = other.testCases.stream()
+                    .map(testCase -> {
+                        testCase.setName(buildTestCaseName(other, testCase));
+                        return testCase;
+                    })
+                    .collect(Collectors.toList());
 
             skipped += other.skipped;
             updateTestCaseCounts(otherTestCases);
@@ -167,11 +200,18 @@ public class Testsuite {
     }
 
     private static String buildTestCaseName(final Testsuite suite, final TestCase testCase) {
-        if (suite.name == null) {
+        if (suite.getName() == null) {
             return testCase.getName();
+        } else {
+            return suite.getName() + '.' + testCase.getName();
         }
-        else {
-            return suite.name + '.' + testCase.getName();
+    }
+
+    private static String buildTestSuiteName(final Testsuite suite, final Testsuite innerSuite) {
+        if (suite.getName() == null) {
+            return innerSuite.getName();
+        } else {
+            return suite.getName() + '.' + innerSuite.getName();
         }
     }
 }
