@@ -1,28 +1,5 @@
 package de.tum.in.www1.jenkins.notifications;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-import hudson.EnvVars;
-import jenkins.model.Jenkins;
-import jenkins.tasks.SimpleBuildStep;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpException;
-import org.jenkinsci.Symbol;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
-import org.kohsuke.stapler.AncestorInPath;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
@@ -30,14 +7,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.sun.xml.bind.v2.ContextFactory;
-
 import de.tum.in.ase.parser.domain.Report;
 import de.tum.in.www1.jenkins.notifications.exception.TestParsingException;
 import de.tum.in.www1.jenkins.notifications.model.Commit;
 import de.tum.in.www1.jenkins.notifications.model.ObjectFactory;
 import de.tum.in.www1.jenkins.notifications.model.TestResults;
 import de.tum.in.www1.jenkins.notifications.model.Testsuite;
-
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -54,6 +30,24 @@ import hudson.tasks.Publisher;
 import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import jenkins.model.Jenkins;
+import jenkins.tasks.SimpleBuildStep;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpException;
+import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.kohsuke.stapler.AncestorInPath;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.QueryParameter;
 
 public class SendTestResultsNotificationPostBuildTask extends Recorder implements SimpleBuildStep {
 
@@ -76,7 +70,12 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
     }
 
     @Override
-    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull EnvVars envVars, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener)
+    public void perform(
+            @Nonnull Run<?, ?> run,
+            @Nonnull FilePath filePath,
+            @Nonnull EnvVars envVars,
+            @Nonnull Launcher launcher,
+            @Nonnull TaskListener taskListener)
             throws InterruptedException, IOException {
         final FilePath testResultsDir = filePath.child(TEST_RESULTS_PATH);
         final FilePath customFeedbacksDir = filePath.child(CUSTOM_FEEDBACKS_PATH);
@@ -84,13 +83,16 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         final FilePath testwiseCoverageAnalysisReportDir = filePath.child(TESTWISE_COVERAGE_ANALYSIS_REPORT_PATH);
 
         final List<Testsuite> testReports = extractTestResults(taskListener, testResultsDir);
-        final Optional<Testsuite> customFeedbacks = CustomFeedbackParser.extractCustomFeedbacks(taskListener, customFeedbacksDir);
+        final Optional<Testsuite> customFeedbacks =
+                CustomFeedbackParser.extractCustomFeedbacks(taskListener, customFeedbacksDir);
         customFeedbacks.ifPresent(testReports::add);
-        final List<Report> staticCodeAnalysisReport = StaticCodeAnalysisParser.parseReports(taskListener, staticCodeAnalysisResultsDir);
+        final List<Report> staticCodeAnalysisReport =
+                StaticCodeAnalysisParser.parseReports(taskListener, staticCodeAnalysisResultsDir);
 
         final JsonArray testwiseCoverageReport = parseTestwiseCoverageReport(testwiseCoverageAnalysisReportDir);
 
-        final TestResults results = combineTestResults(run, testReports, staticCodeAnalysisReport, testwiseCoverageReport);
+        final TestResults results =
+                combineTestResults(run, testReports, staticCodeAnalysisReport, testwiseCoverageReport);
 
         // Set build status
         results.setIsBuildSuccessful(run.getResult() == Result.SUCCESS);
@@ -98,38 +100,45 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
         // Add build logs
         results.setLogs(extractLogs(run, taskListener));
 
-        final StringCredentials credentials = CredentialsProvider.findCredentialById(credentialsId, StringCredentials.class, run, Collections.emptyList());
-        final String secret = credentials != null ? credentials.getSecret().getPlainText() : "Credentials containing the Notification Plugin Secret not found";
+        final StringCredentials credentials = CredentialsProvider.findCredentialById(
+                credentialsId, StringCredentials.class, run, Collections.emptyList());
+        final String secret = credentials != null
+                ? credentials.getSecret().getPlainText()
+                : "Credentials containing the Notification Plugin Secret not found";
 
         postBuildResults(taskListener, results, secret);
     }
 
-    private void postBuildResults(@Nonnull TaskListener taskListener, TestResults results, String secret) throws IOException {
+    private void postBuildResults(@Nonnull TaskListener taskListener, TestResults results, String secret)
+            throws IOException {
         try {
             HttpHelper.postTestResults(results, notificationUrl, secret);
-        }
-        catch (HttpException e) {
+        } catch (HttpException e) {
             taskListener.error(e.getMessage());
         }
     }
 
-    private List<Testsuite> extractTestResults(@Nonnull TaskListener taskListener, FilePath resultsDir) throws IOException, InterruptedException {
-        return resultsDir.list().stream().filter(path -> path.getName().endsWith(".xml")).map(report -> {
-            try {
-                final JAXBContext context = createJAXBContext();
-                final Unmarshaller unmarshaller = context.createUnmarshaller();
-                Testsuite testsuite = (Testsuite) unmarshaller.unmarshal(report.read());
-                return testsuite.flatten();
-            }
-            catch (JAXBException | IOException | InterruptedException e) {
-                taskListener.error(e.getMessage());
-                throw new TestParsingException(e);
-            }
-        }).collect(Collectors.toList());
+    private List<Testsuite> extractTestResults(@Nonnull TaskListener taskListener, FilePath resultsDir)
+            throws IOException, InterruptedException {
+        return resultsDir.list().stream()
+                .filter(path -> path.getName().endsWith(".xml"))
+                .map(report -> {
+                    try {
+                        final JAXBContext context = createJAXBContext();
+                        final Unmarshaller unmarshaller = context.createUnmarshaller();
+                        Testsuite testsuite = (Testsuite) unmarshaller.unmarshal(report.read());
+                        return testsuite.flatten();
+                    } catch (JAXBException | IOException | InterruptedException e) {
+                        taskListener.error(e.getMessage());
+                        throw new TestParsingException(e);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     private JAXBContext createJAXBContext() throws JAXBException {
-        return ContextFactory.createContext(ObjectFactory.class.getPackage().getName(), ObjectFactory.class.getClassLoader(), null);
+        return ContextFactory.createContext(
+                ObjectFactory.class.getPackage().getName(), ObjectFactory.class.getClassLoader(), null);
     }
 
     private List<String> extractLogs(@Nonnull Run<?, ?> run, TaskListener taskListener) {
@@ -140,15 +149,18 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
 
             final String logString = stringWriter.toString();
             Collections.addAll(logs, logString.split("\n"));
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             taskListener.error(ex.getMessage());
         }
 
         return logs;
     }
 
-    private TestResults combineTestResults(@Nonnull Run<?, ?> run, List<Testsuite> testReports, List<Report> staticCodeAnalysisReports, JsonArray testwiseCoverageReport) {
+    private TestResults combineTestResults(
+            @Nonnull Run<?, ?> run,
+            List<Testsuite> testReports,
+            List<Report> staticCodeAnalysisReports,
+            JsonArray testwiseCoverageReport) {
         int skipped = 0;
         int failed = 0;
         int successful = 0;
@@ -175,21 +187,28 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
     }
 
     private List<Commit> findCommits(Run<?, ?> run) {
-        return run.getActions(BuildData.class).stream().map(buildData -> {
-            final String[] urlString = buildData.getRemoteUrls().iterator().next().split("/");
-            final String slug = urlString[urlString.length - 1].split("\\.")[0];
-            final String hash = Objects.requireNonNull(buildData.getLastBuiltRevision()).getSha1().name();
-            final Commit commit = new Commit();
-            commit.setRepositorySlug(slug);
-            commit.setHash(hash);
-            commit.setBranchName(getBranchName(buildData));
-            return commit;
-        }).collect(Collectors.toList());
+        return run.getActions(BuildData.class).stream()
+                .map(buildData -> {
+                    final String[] urlString =
+                            buildData.getRemoteUrls().iterator().next().split("/");
+                    final String slug = urlString[urlString.length - 1].split("\\.")[0];
+                    final String hash = Objects.requireNonNull(buildData.getLastBuiltRevision())
+                            .getSha1()
+                            .name();
+                    final Commit commit = new Commit();
+                    commit.setRepositorySlug(slug);
+                    commit.setHash(hash);
+                    commit.setBranchName(getBranchName(buildData));
+                    return commit;
+                })
+                .collect(Collectors.toList());
     }
 
     private JsonArray parseTestwiseCoverageReport(FilePath reportDir) {
         try {
-            Optional<FilePath> optionalReport = reportDir.list().stream().filter(filePath -> filePath.getName().endsWith(".json")).findFirst();
+            Optional<FilePath> optionalReport = reportDir.list().stream()
+                    .filter(filePath -> filePath.getName().endsWith(".json"))
+                    .findFirst();
             if (optionalReport.isEmpty()) {
                 return new JsonArray();
             }
@@ -197,8 +216,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             String fileContent = optionalReport.get().readToString();
             JsonElement element = JsonParser.parseString(fileContent);
             return element.getAsJsonObject().get("tests").getAsJsonArray();
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             // catch type Throwable to be safe
             return new JsonArray();
         }
@@ -209,12 +227,16 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
             return null;
         }
 
-        String branchName = buildData.getLastBuiltRevision().getBranches().stream().map(GitObject::getName).findFirst().orElse(null);
+        String branchName = buildData.getLastBuiltRevision().getBranches().stream()
+                .map(GitObject::getName)
+                .findFirst()
+                .orElse(null);
         if (branchName == null) {
             return null;
         }
 
-        // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the BRANCH_NAME might also contain /, so we can not simply use
+        // The branch name is in the format REPO_NAME/BRANCH_NAME -> We want to get rid of the REPO_NAME (the
+        // BRANCH_NAME might also contain /, so we can not simply use
         // branchNameParts[1])
         String[] branchNameParts = branchName.split("/");
         String[] branchNamePartsWithoutRepositoryName = Arrays.copyOfRange(branchNameParts, 1, branchNameParts.length);
@@ -258,13 +280,17 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                 if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                     return result.includeCurrentValue(credentialsId);
                 }
-            }
-            else {
+            } else {
                 if (!item.hasPermission(Item.EXTENDED_READ) && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
                     return result.includeCurrentValue(credentialsId);
                 }
             }
-            return result.includeMatchingAs(ACL.SYSTEM, item, StringCredentials.class, Collections.emptyList(), CredentialsMatchers.always())
+            return result.includeMatchingAs(
+                            ACL.SYSTEM,
+                            item,
+                            StringCredentials.class,
+                            Collections.emptyList(),
+                            CredentialsMatchers.always())
                     .includeCurrentValue(credentialsId);
         }
 
@@ -273,8 +299,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                 if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
                     return FormValidation.ok();
                 }
-            }
-            else {
+            } else {
                 if (!item.hasPermission(Item.EXTENDED_READ) && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
                     return FormValidation.ok();
                 }
