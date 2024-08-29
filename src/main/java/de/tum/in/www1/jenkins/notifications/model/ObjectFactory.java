@@ -1,9 +1,8 @@
 package de.tum.in.www1.jenkins.notifications.model;
 
-import javax.xml.bind.annotation.XmlRegistry;
-
 import de.tum.in.ase.parser.domain.Issue;
 import de.tum.in.ase.parser.domain.Report;
+import javax.xml.bind.annotation.XmlRegistry;
 
 /**
  * Based on <a href="https://github.com/jenkinsci/performance-signature-dynatrace-plugin/pull/81/files">an issue of
@@ -49,6 +48,10 @@ public class ObjectFactory {
 
     public Testsuite createTestsuite() {
         return new Testsuite();
+    }
+
+    public Testsuites createTestsuites() {
+        return new Testsuites();
     }
 
     public Report createReport() {
