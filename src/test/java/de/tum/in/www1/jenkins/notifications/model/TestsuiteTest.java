@@ -1,11 +1,10 @@
 package de.tum.in.www1.jenkins.notifications.model;
 
-import com.sun.xml.bind.v2.ContextFactory;
+import de.tum.in.www1.jenkins.notifications.JunitXmlParser;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
@@ -14,14 +13,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class TestsuiteTest {
 
+    private JunitXmlParser junitXmlParser;
+
+    @BeforeEach
+    void setup() throws JAXBException {
+        junitXmlParser = new JunitXmlParser();
+    }
+
     @Test
     void testFlattenNestedSuiteSuccessful() throws Exception {
-        Testsuite input = loadTestSuite(Paths.get("nested_successful.xml"));
+        Testsuite input = loadSingleTestSuite(Paths.get("nested_successful.xml"));
         assertEquals(2, input.getTestSuites().size());
 
         Testsuite flattened = input.flatten();
@@ -35,7 +42,7 @@ class TestsuiteTest {
 
     @Test
     void testFlattenBuildTestCaseNames() throws Exception {
-        Testsuite testSuite = loadTestSuite(Paths.get("nested_successful.xml")).flatten();
+        Testsuite testSuite = loadSingleTestSuite(Paths.get("nested_successful.xml")).flatten();
 
         List<String> expectedTestCaseNames = new ArrayList<>();
         expectedTestCaseNames.add("Properties.Checked by SmallCheck.Testing filtering in A");
@@ -51,7 +58,7 @@ class TestsuiteTest {
 
     @Test
     void testFlattenNestedSuiteWithFailures() throws Exception {
-        Testsuite input = loadTestSuite(Paths.get("nested_with_failures.xml"));
+        Testsuite input = loadSingleTestSuite(Paths.get("nested_with_failures.xml"));
         assertEquals(2, input.getTestSuites().size());
 
         Testsuite flattened = input.flatten();
@@ -63,16 +70,26 @@ class TestsuiteTest {
         assertEquals(1, flattened.getErrors());
     }
 
-    private Testsuite loadTestSuite(final Path reportXml) throws JAXBException {
-        Path resourcePath = new File("testsuite_examples").toPath().resolve(reportXml);
-        URL resource = getClass().getClassLoader().getResource(resourcePath.toString());
+    @Test
+    void testParseTestSuites() throws Exception {
+        List<Testsuite> suites = loadTestSuite(Paths.get("nested_with_failures_top_level_testsuites.xml")).collect(Collectors.toList());
+        assertEquals(2, suites.size());
 
-        final JAXBContext context = createJAXBContext();
-        final Unmarshaller unmarshaller = context.createUnmarshaller();
-        return (Testsuite) unmarshaller.unmarshal(resource);
+        assertEquals("Properties", suites.get(0).getName());
+        assertEquals("Unit Tests", suites.get(1).getName());
     }
 
-    private JAXBContext createJAXBContext() throws JAXBException {
-        return ContextFactory.createContext(ObjectFactory.class.getPackage().getName(), ObjectFactory.class.getClassLoader(), null);
+    private Stream<Testsuite> loadTestSuite(final Path reportXml) throws IOException {
+        Path resourcePath = new File("testsuite_examples").toPath().resolve(reportXml);
+        URL resource = getClass().getClassLoader().getResource(resourcePath.toString());
+        assertNotNull(resource);
+
+        return junitXmlParser.parseJunitTestReport(resource.openStream());
+    }
+
+    private Testsuite loadSingleTestSuite(final Path reportXml) throws IOException {
+        final List<Testsuite> testsuites = loadTestSuite(reportXml).collect(Collectors.toList());
+        assertEquals(1, testsuites.size());
+        return testsuites.get(0);
     }
 }
