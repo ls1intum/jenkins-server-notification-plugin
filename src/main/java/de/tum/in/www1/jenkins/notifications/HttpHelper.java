@@ -13,7 +13,11 @@ import com.google.gson.Gson;
 
 import de.tum.in.www1.jenkins.notifications.model.TestResults;
 
-public class HttpHelper {
+public final class HttpHelper {
+
+    private HttpHelper() {
+        throw new IllegalCallerException("utility class constructor");
+    }
 
     public static void postTestResults(TestResults results, String url, String secret) throws IOException, HttpException {
         final String body = new Gson().toJson(results);
