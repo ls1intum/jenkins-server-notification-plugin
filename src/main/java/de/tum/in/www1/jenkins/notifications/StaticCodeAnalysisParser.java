@@ -12,7 +12,11 @@ import de.tum.in.ase.parser.domain.Report;
 import hudson.FilePath;
 import hudson.model.TaskListener;
 
-public class StaticCodeAnalysisParser {
+public final class StaticCodeAnalysisParser {
+
+    private StaticCodeAnalysisParser() {
+        throw new IllegalCallerException("utility class constructor");
+    }
 
     /**
      * Parses all reports supported by the static code analysis parser.
@@ -31,7 +35,7 @@ public class StaticCodeAnalysisParser {
                     continue;
                 }
 
-                // Try to parse each report separately. Failure parsing one report should not effect the parsing of others
+                // Try to parse each report separately. Failure parsing one report should not affect the parsing of others
                 Optional<Report> report = parseReport(taskListener, filePath);
                 report.ifPresent(reports::add);
             }

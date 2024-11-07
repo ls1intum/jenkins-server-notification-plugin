@@ -2,7 +2,6 @@ package de.tum.in.www1.jenkins.notifications.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -171,7 +170,7 @@ public class Testsuite {
                         testCase.setName(buildTestCaseName(other, testCase));
                         return testCase;
                     })
-                    .collect(Collectors.toList());
+                    .toList();
 
             skipped += other.skipped;
             updateTestCaseCounts(otherTestCases);
