@@ -6,7 +6,6 @@ import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
@@ -52,7 +51,7 @@ public class CustomFeedbackParser {
                 })
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(Collectors.toList());
+                .toList();
 
         if (feedbacks.isEmpty()) {
             return Optional.empty();
@@ -113,7 +112,7 @@ public class CustomFeedbackParser {
             }
 
             return testCase;
-        }).collect(Collectors.toList());
+        }).toList();
 
         suite.setTestCases(testCases);
 

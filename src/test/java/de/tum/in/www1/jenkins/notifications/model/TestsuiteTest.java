@@ -12,7 +12,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,7 +46,7 @@ class TestsuiteTest {
         expectedTestCaseNames.add("Properties.Checked by SmallCheck.Testing filtering in A");
         expectedTestCaseNames.add("Testing selectAndReflectA (0,0) []");
 
-        List<String> actualTestCaseNames = testSuite.getTestCases().stream().map(TestCase::getName).collect(Collectors.toList());
+        List<String> actualTestCaseNames = testSuite.getTestCases().stream().map(TestCase::getName).toList();
 
         for (String testCaseName : expectedTestCaseNames) {
             Optional<String> testCase = actualTestCaseNames.stream().filter(testCaseName::equals).findFirst();
@@ -87,7 +86,7 @@ class TestsuiteTest {
         assertEquals(3, flattened.getTests());
         assertIterableEquals(
                 List.of("Test1", "Test2", "Test3"),
-                flattened.getTestCases().stream().map(TestCase::getName).collect(Collectors.toList())
+                flattened.getTestCases().stream().map(TestCase::getName).toList()
         );
     }
 
@@ -146,13 +145,13 @@ class TestsuiteTest {
     }
 
     private List<String> getTestNames(final Testsuites suites) {
-        return suites.flattened().flatMap(suite -> suite.getTestCases().stream()).map(TestCase::getName).collect(Collectors.toList());
+        return suites.flattened().flatMap(suite -> suite.getTestCases().stream()).map(TestCase::getName).toList();
     }
 
     private static <T> void assertSameElementsAnyOrder(final List<T> expected, final List<T> actual) {
         assertAll(
                 () -> assertEquals(expected.size(), actual.size()),
-                () -> assertTrue(expected.containsAll(actual), () -> String.format("Expected: %s\nActual: %s", expected, actual)),
+                () -> assertTrue(expected.containsAll(actual), () -> String.format("Expected: %s%nActual: %s", expected, actual)),
                 () -> assertTrue(actual.containsAll(expected))
         );
     }

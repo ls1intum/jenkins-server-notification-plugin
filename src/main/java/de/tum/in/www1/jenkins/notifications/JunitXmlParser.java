@@ -29,11 +29,11 @@ public class JunitXmlParser {
              * alternatively, if there is only one test suite, the `<testsuite>` is allowed to appear as the top-most
              * element in the XML.
              */
-            if (parsedTestResults instanceof Testsuites) {
-                return (Testsuites) parsedTestResults;
-            } else if (parsedTestResults instanceof Testsuite) {
+            if (parsedTestResults instanceof Testsuites testSuites) {
+                return testSuites;
+            } else if (parsedTestResults instanceof Testsuite testSuite) {
                 final Testsuites suites = new Testsuites();
-                suites.setTestSuites(List.of((Testsuite) parsedTestResults));
+                suites.setTestSuites(List.of(testSuite));
                 return suites;
             } else {
                 throw new IllegalStateException("Cannot parse " + report + "! Unknown JUnit XML format.");

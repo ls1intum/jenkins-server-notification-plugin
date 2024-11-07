@@ -32,7 +32,6 @@ import hudson.util.ListBoxModel;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.xml.bind.JAXBException;
@@ -134,7 +133,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                     }
                 })
                 .flatMap(Testsuites::flattened)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private List<String> extractLogs(@Nonnull Run<?, ?> run, TaskListener taskListener) {
@@ -197,7 +196,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                     commit.setBranchName(getBranchName(buildData));
                     return commit;
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private JsonArray parseTestwiseCoverageReport(FilePath reportDir) {
