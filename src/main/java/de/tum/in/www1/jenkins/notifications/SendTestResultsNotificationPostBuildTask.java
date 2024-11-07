@@ -282,7 +282,7 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                 }
             }
             return result.includeMatchingAs(
-                            ACL.SYSTEM,
+                            ACL.SYSTEM2,
                             item,
                             StringCredentials.class,
                             Collections.emptyList(),
