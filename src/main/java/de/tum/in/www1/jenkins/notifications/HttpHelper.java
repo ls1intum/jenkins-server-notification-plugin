@@ -1,21 +1,23 @@
 package de.tum.in.www1.jenkins.notifications;
 
+import com.google.gson.Gson;
+import de.tum.in.www1.jenkins.notifications.model.TestResults;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 
-import com.google.gson.Gson;
+public final class HttpHelper {
 
-import de.tum.in.www1.jenkins.notifications.model.TestResults;
+    private HttpHelper() {
+        throw new IllegalCallerException("utility class constructor");
+    }
 
-public class HttpHelper {
-
-    public static void postTestResults(TestResults results, String url, String secret) throws IOException, HttpException {
+    public static void postTestResults(TestResults results, String url, String secret)
+            throws IOException, HttpException {
         final String body = new Gson().toJson(results);
         final HttpResponse response = Request.Post(url)
                 .addHeader("Authorization", secret)
