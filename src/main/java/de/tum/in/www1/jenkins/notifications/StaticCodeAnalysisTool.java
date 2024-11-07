@@ -13,7 +13,6 @@ import org.apache.commons.io.FilenameUtils;
  * within the StaticCodeAnalysisTool.java file.
  */
 public enum StaticCodeAnalysisTool {
-
     SPOTBUGS("spotbugsXml.xml"),
     CHECKSTYLE("checkstyle-result.xml"),
     SWIFTLINT("swiftlint-result.xml"),

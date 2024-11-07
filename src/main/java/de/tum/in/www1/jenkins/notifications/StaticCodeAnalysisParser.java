@@ -1,16 +1,13 @@
 package de.tum.in.www1.jenkins.notifications;
 
+import com.google.gson.Gson;
+import de.tum.in.ase.parser.domain.Report;
+import hudson.FilePath;
+import hudson.model.TaskListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import com.google.gson.Gson;
-
-import de.tum.in.ase.parser.domain.Report;
-
-import hudson.FilePath;
-import hudson.model.TaskListener;
 
 public final class StaticCodeAnalysisParser {
 
@@ -35,13 +32,13 @@ public final class StaticCodeAnalysisParser {
                     continue;
                 }
 
-                // Try to parse each report separately. Failure parsing one report should not affect the parsing of others
+                // Try to parse each report separately. Failure parsing one report should not affect the parsing of
+                // others
                 Optional<Report> report = parseReport(taskListener, filePath);
                 report.ifPresent(reports::add);
             }
             return reports;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             taskListener.error(e.getMessage(), e);
             return new ArrayList<>();
         }
@@ -56,9 +53,12 @@ public final class StaticCodeAnalysisParser {
      * @throws IOException if something went wrong file parsing the report.
      * @throws InterruptedException if something went wrong file parsing the report.
      */
-    private static Optional<Report> parseReport(TaskListener taskListener, FilePath reportFilePath) throws IOException, InterruptedException {
-        // File operations in Jenkins should be done through a FileCallable class which allows operations on main instance and worker agents.
-        StaticCodeAnalysisParserFileCallable staticCodeAnalysisParserFileCallable = new StaticCodeAnalysisParserFileCallable(taskListener);
+    private static Optional<Report> parseReport(TaskListener taskListener, FilePath reportFilePath)
+            throws IOException, InterruptedException {
+        // File operations in Jenkins should be done through a FileCallable class which allows operations on main
+        // instance and worker agents.
+        StaticCodeAnalysisParserFileCallable staticCodeAnalysisParserFileCallable =
+                new StaticCodeAnalysisParserFileCallable(taskListener);
 
         // Parse the report using act().
         String reportJson = reportFilePath.act(staticCodeAnalysisParserFileCallable);
