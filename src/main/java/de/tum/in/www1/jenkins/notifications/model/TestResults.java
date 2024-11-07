@@ -1,20 +1,15 @@
 package de.tum.in.www1.jenkins.notifications.model;
 
+import com.google.gson.JsonArray;
+import de.tum.in.ase.parser.domain.Report;
+import hudson.model.Action;
+import hudson.model.Api;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
 import javax.annotation.CheckForNull;
-
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
-
-import com.google.gson.JsonArray;
-
-import de.tum.in.ase.parser.domain.Report;
-
-import hudson.model.Action;
-import hudson.model.Api;
 
 @ExportedBean
 public class TestResults implements Action {
