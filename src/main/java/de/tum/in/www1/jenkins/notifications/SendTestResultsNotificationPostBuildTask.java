@@ -32,6 +32,7 @@ import hudson.util.ListBoxModel;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.xml.bind.JAXBException;
@@ -133,7 +134,8 @@ public class SendTestResultsNotificationPostBuildTask extends Recorder implement
                     }
                 })
                 .flatMap(Testsuites::flattened)
-                .toList();
+                // explicitly mutable: we may add other (custom) feedback later
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private List<String> extractLogs(@Nonnull Run<?, ?> run, TaskListener taskListener) {
