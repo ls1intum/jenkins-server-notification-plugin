@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>5.7</version>
+    <version>5.24</version>
     <relativePath />
   </parent>
   <groupId>io.jenkins.plugins</groupId>
@@ -34,10 +34,10 @@
         Check the Jenkins documentation for the recommended baseline version:
         https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/
         -->
-    <jenkins.version>2.492.1</jenkins.version>
-    <jenkins.bom.artifactId>bom-2.492.x</jenkins.bom.artifactId>
-    <jenkins.bom.version>4228.v0a_71308d905b_</jenkins.bom.version>
-    <spotless.version>2.44.3</spotless.version>
+    <jenkins.version>2.516.1</jenkins.version>
+    <jenkins.bom.artifactId>bom-2.516.x</jenkins.bom.artifactId>
+    <jenkins.bom.version>5294.va_d2e144c80e1</jenkins.bom.version>
+    <spotless.version>2.46.1</spotless.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -51,7 +51,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.12.0</version>
+        <version>5.13.4</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -117,7 +117,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.12</version>
+        <version>0.8.13</version>
         <executions>
           <execution>
             <id>prepare-agent</id>

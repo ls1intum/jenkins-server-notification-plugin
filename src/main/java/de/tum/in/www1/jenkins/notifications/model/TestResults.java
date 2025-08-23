@@ -4,10 +4,10 @@ import com.google.gson.JsonArray;
 import de.tum.in.ase.parser.domain.Report;
 import hudson.model.Action;
 import hudson.model.Api;
+import jakarta.annotation.Nullable;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import javax.annotation.CheckForNull;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
@@ -146,19 +146,18 @@ public class TestResults implements Action {
         this.isBuildSuccessful = buildSuccessful;
     }
 
-    @CheckForNull
+    @Nullable
     @Override
     public String getIconFileName() {
         return null;
     }
 
-    @CheckForNull
+    @Nullable
     @Override
     public String getDisplayName() {
         return null;
     }
 
-    @CheckForNull
     @Override
     public String getUrlName() {
         return "testResults";
