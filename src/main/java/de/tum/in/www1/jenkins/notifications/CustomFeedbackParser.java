@@ -4,13 +4,13 @@ import com.google.gson.Gson;
 import de.tum.in.www1.jenkins.notifications.model.*;
 import hudson.FilePath;
 import hudson.model.TaskListener;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.InvalidPropertiesFormatException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
 
 public class CustomFeedbackParser {
 
