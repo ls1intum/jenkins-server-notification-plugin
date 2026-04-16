@@ -2,7 +2,7 @@ package de.tum.in.www1.jenkins.notifications.model;
 
 import de.tum.in.ase.parser.domain.Issue;
 import de.tum.in.ase.parser.domain.Report;
-import javax.xml.bind.annotation.XmlRegistry;
+import jakarta.xml.bind.annotation.XmlRegistry;
 
 /**
  * Based on <a href="https://github.com/jenkinsci/performance-signature-dynatrace-plugin/pull/81/files">an issue of

@@ -1,10 +1,10 @@
 package de.tum.in.www1.jenkins.notifications.model;
 
 import de.tum.in.www1.jenkins.notifications.JunitXmlParser;
+import jakarta.xml.bind.JAXBException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
