@@ -15,7 +15,7 @@ on:
       - '!.github/workflows/**'
 
 env:
-  java: 17
+  java: 21
   java-distribution: "temurin"
 
 jobs:
