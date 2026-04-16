@@ -1,15 +1,15 @@
 package de.tum.in.www1.jenkins.notifications;
 
-import com.sun.xml.bind.v2.ContextFactory;
 import de.tum.in.www1.jenkins.notifications.exception.TestParsingException;
 import de.tum.in.www1.jenkins.notifications.model.ObjectFactory;
 import de.tum.in.www1.jenkins.notifications.model.Testsuite;
 import de.tum.in.www1.jenkins.notifications.model.Testsuites;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import java.io.InputStream;
 import java.util.List;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import org.glassfish.jaxb.runtime.v2.ContextFactory;
 
 public class JunitXmlParser {
 

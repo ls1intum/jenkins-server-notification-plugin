@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>5.24</version>
+    <version>6.2138.v03274d462c13</version>
     <relativePath />
   </parent>
   <groupId>io.jenkins.plugins</groupId>
@@ -34,10 +34,10 @@
         Check the Jenkins documentation for the recommended baseline version:
         https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/
         -->
-    <jenkins.version>2.516.1</jenkins.version>
-    <jenkins.bom.artifactId>bom-2.516.x</jenkins.bom.artifactId>
-    <jenkins.bom.version>5294.va_d2e144c80e1</jenkins.bom.version>
-    <spotless.version>2.46.1</spotless.version>
+    <jenkins.version>2.555.1</jenkins.version>
+    <jenkins.bom.artifactId>bom-2.555.x</jenkins.bom.artifactId>
+    <jenkins.bom.version>6269.v7a_159d68a_366</jenkins.bom.version>
+    <spotless.version>3.4.0</spotless.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -51,7 +51,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.13.4</version>
+        <version>6.0.2</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -71,12 +71,12 @@
     <!-- jenkins plugin dependencies -->
     <!-- the compatible versions are automatically determined by the jenkins bom -->
     <dependency>
-      <groupId>io.jenkins.plugins</groupId>
-      <artifactId>jaxb</artifactId>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>git</artifactId>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
-      <artifactId>git</artifactId>
+      <artifactId>jackson2-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
@@ -112,12 +112,12 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.18.0</version>
+        <version>2.21.0</version>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>0.8.14</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
